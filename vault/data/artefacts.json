@@ -1,0 +1,26 @@
+[
+  {
+    "id": "compass",
+    "title": "Temporal Compass",
+    "description": "A pocket-sized compass pointing toward audacious futures.",
+    "image": "./assets/images/artefact1.png",
+    "unlockKey": null,
+    "timeline": "Chrono‑Alpha‑9"
+  },
+  {
+    "id": "quartz",
+    "title": "Quantum Quartz",
+    "description": "A fragment of crystal that hums with undiscovered frequencies.",
+    "image": "./assets/images/artefact2.png",
+    "unlockKey": null,
+    "timeline": "Beta‑Specter‑2"
+  },
+  {
+    "id": "scroll",
+    "title": "Scroll of Untold Codes",
+    "description": "Scripture written in a language that dreams of new realities.",
+    "image": "./assets/images/artefact3.png",
+    "unlockKey": null,
+    "timeline": "Delta‑Rune‑42"
+  }
+]
