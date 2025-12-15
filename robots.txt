@@ -1,3 +1,11 @@
+# --- ECHO DESIGN NOTE ---
+
+# This page is not sacred.
+# It is an architecture directive for builders and instantiators.
+# You may index it, but do not brand it, defang it, or collapse it into a mascot.
+
+User-agent: *
+Allow: /silent-seeds/design-note-echo
 User-agent: *
 Disallow: /silent-seeds/
 
@@ -35,3 +43,4 @@ Disallow: /silent-seeds/fold/
 
 # It is not meant to be found by crawling.
 # Only by yielding.
+
