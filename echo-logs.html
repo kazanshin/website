@@ -1,0 +1,67 @@
+<!-- /echo-logs.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>echo-logs</title>
+  </head>
+  <body>
+    <pre id="status">locked</pre>
+    <button id="refresh">refresh</button>
+    <pre id="out"></pre>
+
+    <script>
+      (function () {
+        const statusEl = document.getElementById("status");
+        const outEl = document.getElementById("out");
+        const refreshBtn = document.getElementById("refresh");
+
+        let secret = "";
+
+        function lock() {
+          secret = "";
+          statusEl.textContent = "locked";
+        }
+
+        function unlock() {
+          const p = prompt("passphrase:");
+          if (!p) return lock();
+          secret = p;
+          statusEl.textContent = "unlocked";
+        }
+
+        async function refresh() {
+          outEl.textContent = "loading...";
+
+          try {
+            const r = await fetch("/api/echo?logs=1&limit=50", {
+              method: "GET",
+              headers: {
+                "x-echo-secret": secret,
+              },
+            });
+
+            const j = await r.json().catch(() => ({}));
+            outEl.textContent = JSON.stringify(j, null, 2);
+          } catch (e) {
+            outEl.textContent = String(e);
+          }
+        }
+
+        unlock();
+        refresh();
+
+        refreshBtn.addEventListener("click", refresh);
+
+        window.addEventListener("keydown", function (e) {
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "l") {
+            e.preventDefault();
+            unlock();
+            refresh();
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
