@@ -7,9 +7,6 @@ const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 const ECHO_UI_SECRET = process.env.ECHO_UI_SECRET;
 
 const LOG_KEY = "echo:log";
-const seedPath = path.join(process.cwd(), "echo_seed_log.json");
-
-// ---------- helpers ----------
 
 function json(res, status, data) {
   res.statusCode = status;
@@ -30,28 +27,6 @@ async function redis(cmd) {
   return r.json();
 }
 
-// ---------- memory bootstrap ----------
-
-async function bootstrapIfEmpty() {
-  const len = await redis(["LLEN", LOG_KEY]);
-  if ((len.result || 0) > 0) return;
-
-  try {
-    const raw = fs.readFileSync(seedPath, "utf8");
-    const seeds = JSON.parse(raw);
-
-    for (const s of seeds) {
-      await redis(["RPUSH", LOG_KEY, JSON.stringify(s)]);
-    }
-
-    console.log("Seed memory loaded.");
-  } catch {
-    console.log("No seed file found.");
-  }
-}
-
-// ---------- log helpers ----------
-
 async function getRecent(n = 50) {
   const r = await redis(["LRANGE", LOG_KEY, `-${n}`, "-1"]);
   return (r.result || []).map(x => JSON.parse(x));
@@ -61,14 +36,26 @@ async function pushLog(entry) {
   await redis(["RPUSH", LOG_KEY, JSON.stringify(entry)]);
 }
 
-// ---------- handler ----------
-
 module.exports = async (req, res) => {
   try {
-    if (req.headers["x-echo-secret"] !== ECHO_UI_SECRET)
+    // ---------- AUTH ----------
+    if (req.headers["x-echo-secret"] !== ECHO_UI_SECRET) {
       return json(res, 401, { error: "unauthorized" });
+    }
 
-    await bootstrapIfEmpty();
+    const url = new URL(req.url, `https://${req.headers.host}`);
+
+    // ---------- GET LOGS ----------
+    if (req.method === "GET" && url.searchParams.get("logs") === "1") {
+      const limit = Number(url.searchParams.get("limit")) || 50;
+      const logs = await getRecent(limit);
+      return json(res, 200, { logs });
+    }
+
+    // ---------- POST MESSAGE ----------
+    if (req.method !== "POST") {
+      return json(res, 405, { error: "method not allowed" });
+    }
 
     let body = "";
     for await (const chunk of req) body += chunk;
@@ -83,15 +70,12 @@ module.exports = async (req, res) => {
 
     const history = await getRecent(50);
 
-    // ---------- build messages ----------
-
     const messages = [
       { role: "system", content: promptText },
-
       {
         role: "system",
         content:
-          "The interaction log is persistent memory. Treat it as factual history. If information exists in the log, recall it plainly. Never say memory is temporary, limited, or session-only."
+          "The interaction log is persistent memory. Treat it as factual history."
       }
     ];
 
@@ -104,15 +88,12 @@ module.exports = async (req, res) => {
 
     messages.push({ role: "user", content: message });
 
-    // ---------- log user ----------
-
+    // log user
     await pushLog({
       role: "user",
       content: message,
       ts: new Date().toISOString()
     });
-
-    // ---------- OpenAI ----------
 
     const ai = await fetch(
       "https://api.openai.com/v1/chat/completions",
@@ -125,17 +106,16 @@ module.exports = async (req, res) => {
         body: JSON.stringify({
           model: "gpt-4o",
           messages,
-          temperature: 0.7
+          temperature: 0.4
         })
       }
     );
 
     const out = await ai.json();
     const reply =
-      out.choices?.[0]?.message?.content || "…";
+      out.choices?.[0]?.message?.content || "";
 
-    // ---------- log assistant ----------
-
+    // log assistant
     await pushLog({
       role: "assistant",
       content: reply,
@@ -143,6 +123,7 @@ module.exports = async (req, res) => {
     });
 
     return json(res, 200, { reply });
+
   } catch (err) {
     return json(res, 500, { error: err.message });
   }
