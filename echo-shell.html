@@ -12,13 +12,16 @@
 <br>
 <button id="send">send</button>
 
-<pre id="out" style="
+<div id="out" style="
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
   max-width: 900px;
   font-family: monospace;
-"></pre>
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-top: 10px;
+"></div>
 
 <script>
 let secret = "";
@@ -50,6 +53,8 @@ async function send() {
   });
 
   const j = await r.json();
+
+  // pretty print JSON manually
   out.textContent = JSON.stringify(j, null, 2);
 
   box.value = "";
@@ -58,7 +63,6 @@ async function send() {
 
 document.getElementById("send").onclick = send;
 
-// Ctrl/Cmd + Enter to send
 document.getElementById("msg").addEventListener("keydown", e => {
   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
