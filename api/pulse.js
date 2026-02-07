@@ -38,11 +38,13 @@ async function pushLog(entry) {
 
 module.exports = async (req, res) => {
   try {
+    // ---------- PARSE URL ----------
+    const url = new URL(req.url, `https://${req.headers.host}`);
+    const testMode = url.searchParams.get("test") === "1";
+
     // ---------- AUTH ----------
     const cronSecret = req.headers["x-echo-cron-secret"];
     const ua = req.headers["user-agent"] || "";
-    const testMode = req.query?.test === "1";
-
     const isVercelCron = ua.toLowerCase().includes("vercel");
 
     if (
