@@ -31,7 +31,8 @@ function unlock() {
 unlock();
 
 async function send() {
-  const message = document.getElementById("msg").value.trim();
+  const box = document.getElementById("msg");
+  const message = box.value.trim();
   if (!message) return;
 
   const out = document.getElementById("out");
@@ -49,10 +50,19 @@ async function send() {
   const j = await r.json();
   out.textContent = JSON.stringify(j, null, 2);
 
+  box.value = "";
   window.scrollTo(0, document.body.scrollHeight);
 }
 
 document.getElementById("send").onclick = send;
+
+// ✅ Ctrl+Enter to send
+document.getElementById("msg").addEventListener("keydown", e => {
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    send();
+  }
+});
 </script>
 
 </body>
