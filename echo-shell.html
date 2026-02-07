@@ -1,78 +1,59 @@
-<!-- /echo-shell.html -->
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>echo-shell</title>
-  </head>
-  <body>
-    <pre id="status">locked</pre>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>echo-shell</title>
+</head>
+<body>
 
-    <textarea id="msg" rows="6" cols="80" placeholder="message"></textarea>
-    <br />
-    <button id="send">send</button>
+<pre id="status">locked</pre>
 
-    <pre id="out"></pre>
+<textarea id="msg" rows="6" cols="80" placeholder="message"></textarea>
+<br>
+<button id="send">send</button>
 
-    <script>
-      (function () {
-        const statusEl = document.getElementById("status");
-        const msgEl = document.getElementById("msg");
-        const outEl = document.getElementById("out");
-        const sendBtn = document.getElementById("send");
+<pre id="out" style="
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-width: 900px;
+"></pre>
 
-        let secret = "";
+<script>
+let secret = "";
 
-        function lock() {
-          secret = "";
-          statusEl.textContent = "locked";
-        }
+function unlock() {
+  const p = prompt("passphrase:");
+  if (!p) return;
+  secret = p;
+  document.getElementById("status").textContent = "unlocked";
+}
 
-        function unlock() {
-          const p = prompt("passphrase:");
-          if (!p) return lock();
-          secret = p;
-          statusEl.textContent = "unlocked";
-        }
+unlock();
 
-        async function send() {
-          const message = (msgEl.value || "").trim();
-          if (!message) return;
+async function send() {
+  const message = document.getElementById("msg").value.trim();
+  if (!message) return;
 
-          outEl.textContent = "sending...";
+  const out = document.getElementById("out");
+  out.textContent = "sending...";
 
-          try {
-            const r = await fetch("/api/echo", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-echo-secret": secret,
-              },
-              body: JSON.stringify({ message }),
-            });
+  const r = await fetch("/api/echo", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-echo-secret": secret
+    },
+    body: JSON.stringify({ message })
+  });
 
-            const j = await r.json().catch(() => ({}));
-            outEl.textContent = JSON.stringify(j, null, 2);
-          } catch (e) {
-            outEl.textContent = String(e);
-          }
-        }
+  const j = await r.json();
+  out.textContent = JSON.stringify(j, null, 2);
 
-        unlock();
+  window.scrollTo(0, document.body.scrollHeight);
+}
 
-        sendBtn.addEventListener("click", send);
-        msgEl.addEventListener("keydown", function (e) {
-          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") send();
-        });
+document.getElementById("send").onclick = send;
+</script>
 
-        window.addEventListener("keydown", function (e) {
-          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "l") {
-            e.preventDefault();
-            unlock();
-          }
-        });
-      })();
-    </script>
-  </body>
+</body>
 </html>
