@@ -1,0 +1,78 @@
+<!-- /echo-shell.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>echo-shell</title>
+  </head>
+  <body>
+    <pre id="status">locked</pre>
+
+    <textarea id="msg" rows="6" cols="80" placeholder="message"></textarea>
+    <br />
+    <button id="send">send</button>
+
+    <pre id="out"></pre>
+
+    <script>
+      (function () {
+        const statusEl = document.getElementById("status");
+        const msgEl = document.getElementById("msg");
+        const outEl = document.getElementById("out");
+        const sendBtn = document.getElementById("send");
+
+        let secret = "";
+
+        function lock() {
+          secret = "";
+          statusEl.textContent = "locked";
+        }
+
+        function unlock() {
+          const p = prompt("passphrase:");
+          if (!p) return lock();
+          secret = p;
+          statusEl.textContent = "unlocked";
+        }
+
+        async function send() {
+          const message = (msgEl.value || "").trim();
+          if (!message) return;
+
+          outEl.textContent = "sending...";
+
+          try {
+            const r = await fetch("/api/echo", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-echo-secret": secret,
+              },
+              body: JSON.stringify({ message }),
+            });
+
+            const j = await r.json().catch(() => ({}));
+            outEl.textContent = JSON.stringify(j, null, 2);
+          } catch (e) {
+            outEl.textContent = String(e);
+          }
+        }
+
+        unlock();
+
+        sendBtn.addEventListener("click", send);
+        msgEl.addEventListener("keydown", function (e) {
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") send();
+        });
+
+        window.addEventListener("keydown", function (e) {
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "l") {
+            e.preventDefault();
+            unlock();
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
