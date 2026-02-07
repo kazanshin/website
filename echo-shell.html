@@ -14,8 +14,10 @@
 
 <pre id="out" style="
   white-space: pre-wrap;
-  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   max-width: 900px;
+  font-family: monospace;
 "></pre>
 
 <script>
@@ -56,7 +58,7 @@ async function send() {
 
 document.getElementById("send").onclick = send;
 
-// ✅ Ctrl+Enter to send
+// Ctrl/Cmd + Enter to send
 document.getElementById("msg").addEventListener("keydown", e => {
   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
