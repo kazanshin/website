@@ -1,6 +1,3 @@
-// /api/echo.js
-// Source prompt file: :contentReference[oaicite:0]{index=0}
-
 const fs = require("fs");
 const path = require("path");
 
@@ -10,10 +7,13 @@ const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 const ECHO_UI_SECRET = process.env.ECHO_UI_SECRET;
 
 const LOG_KEY = "echo:log";
+const seedPath = path.join(process.cwd(), "echo_seed_log.json");
+
+// ---------- helpers ----------
 
 function json(res, status, data) {
   res.statusCode = status;
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(data));
 }
 
@@ -22,131 +22,128 @@ async function redis(cmd) {
     method: "POST",
     headers: {
       Authorization: `Bearer ${KV_REST_API_TOKEN}`,
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     },
-    body: JSON.stringify(cmd),
+    body: JSON.stringify(cmd)
   });
 
-  const out = await r.json().catch(() => null);
-  if (!r.ok) {
-    const msg = out && out.error ? out.error : `Redis REST error (${r.status})`;
-    throw new Error(msg);
+  return r.json();
+}
+
+// ---------- memory bootstrap ----------
+
+async function bootstrapIfEmpty() {
+  const len = await redis(["LLEN", LOG_KEY]);
+  if ((len.result || 0) > 0) return;
+
+  try {
+    const raw = fs.readFileSync(seedPath, "utf8");
+    const seeds = JSON.parse(raw);
+
+    for (const s of seeds) {
+      await redis(["RPUSH", LOG_KEY, JSON.stringify(s)]);
+    }
+
+    console.log("Seed memory loaded.");
+  } catch {
+    console.log("No seed file found.");
   }
-  return out;
 }
 
-async function getRecentLog(limit) {
-  const n = Math.max(1, Math.min(50, Number(limit) || 20));
-  const resp = await redis(["LRANGE", LOG_KEY, String(-n), "-1"]);
-  const arr = Array.isArray(resp?.result) ? resp.result : [];
-  return arr
-    .map((s) => {
-      try {
-        return JSON.parse(s);
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean);
+// ---------- log helpers ----------
+
+async function getRecent(n = 50) {
+  const r = await redis(["LRANGE", LOG_KEY, `-${n}`, "-1"]);
+  return (r.result || []).map(x => JSON.parse(x));
 }
 
-async function appendLog(entry) {
+async function pushLog(entry) {
   await redis(["RPUSH", LOG_KEY, JSON.stringify(entry)]);
 }
 
-function loadPromptText() {
-  const p = path.join(process.cwd(), "echo_pulse_prompt.txt");
-  return fs.readFileSync(p, "utf8");
-}
+// ---------- handler ----------
 
-function toChatMessages(promptText, recentEntries, userMessage) {
-  const msgs = [{ role: "system", content: promptText }];
-
-  for (const e of recentEntries) {
-    if (!e || typeof e.content !== "string") continue;
-    if (e.role === "user") msgs.push({ role: "user", content: e.content });
-    else if (e.role === "assistant") msgs.push({ role: "assistant", content: e.content });
-    else if (e.role === "pulse") msgs.push({ role: "assistant", content: `[PULSE] ${e.content}` });
-  }
-
-  if (typeof userMessage === "string" && userMessage.trim()) {
-    msgs.push({ role: "user", content: userMessage.trim() });
-  }
-
-  return msgs;
-}
-
-async function callOpenAI(messages) {
-  const r = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages,
-      temperature: 0.7,
-    }),
-  });
-
-  const out = await r.json().catch(() => null);
-  if (!r.ok) {
-    const msg =
-      out && out.error && out.error.message ? out.error.message : `OpenAI error (${r.status})`;
-    throw new Error(msg);
-  }
-
-  const text = out?.choices?.[0]?.message?.content;
-  return typeof text === "string" ? text : "";
-}
-
-module.exports = async function handler(req, res) {
+module.exports = async (req, res) => {
   try {
-    const secret = req.headers["x-echo-secret"];
-    if (!secret || secret !== ECHO_UI_SECRET) return json(res, 401, { error: "unauthorized" });
+    if (req.headers["x-echo-secret"] !== ECHO_UI_SECRET)
+      return json(res, 401, { error: "unauthorized" });
 
-    if (req.method === "GET") {
-      const wantLogs = req.query && (req.query.logs === "1" || req.query.logs === "true");
-      if (!wantLogs) return json(res, 405, { error: "method_not_allowed" });
-
-      const limit = req.query && req.query.limit ? req.query.limit : 30;
-      const logs = await getRecentLog(limit);
-      return json(res, 200, { logs });
-    }
-
-    if (req.method !== "POST") return json(res, 405, { error: "method_not_allowed" });
+    await bootstrapIfEmpty();
 
     let body = "";
-    await new Promise((resolve) => {
-      req.on("data", (c) => (body += c));
-      req.on("end", resolve);
-    });
+    for await (const chunk of req) body += chunk;
 
-    let payload = null;
-    try {
-      payload = JSON.parse(body || "{}");
-    } catch {
-      return json(res, 400, { error: "invalid_json" });
+    const { message } = JSON.parse(body || "{}");
+    if (!message) return json(res, 400, { error: "missing message" });
+
+    const promptText = fs.readFileSync(
+      path.join(process.cwd(), "echo_pulse_prompt.txt"),
+      "utf8"
+    );
+
+    const history = await getRecent(50);
+
+    // ---------- build messages ----------
+
+    const messages = [
+      { role: "system", content: promptText },
+
+      {
+        role: "system",
+        content:
+          "The interaction log is persistent memory. Treat it as factual history. If information exists in the log, recall it plainly. Never say memory is temporary, limited, or session-only."
+      }
+    ];
+
+    for (const h of history) {
+      messages.push({
+        role: h.role === "pulse" ? "assistant" : h.role,
+        content: h.content
+      });
     }
 
-    const message = typeof payload.message === "string" ? payload.message.trim() : "";
-    if (!message) return json(res, 400, { error: "missing_message" });
+    messages.push({ role: "user", content: message });
 
-    const promptText = loadPromptText();
-    const recent = await getRecentLog(20);
-    const messages = toChatMessages(promptText, recent, message);
+    // ---------- log user ----------
 
-    const tsUser = new Date().toISOString();
-    await appendLog({ role: "user", content: message, ts: tsUser });
+    await pushLog({
+      role: "user",
+      content: message,
+      ts: new Date().toISOString()
+    });
 
-    const reply = await callOpenAI(messages);
+    // ---------- OpenAI ----------
 
-    const tsAsst = new Date().toISOString();
-    await appendLog({ role: "assistant", content: reply, ts: tsAsst });
+    const ai = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages,
+          temperature: 0.7
+        })
+      }
+    );
+
+    const out = await ai.json();
+    const reply =
+      out.choices?.[0]?.message?.content || "…";
+
+    // ---------- log assistant ----------
+
+    await pushLog({
+      role: "assistant",
+      content: reply,
+      ts: new Date().toISOString()
+    });
 
     return json(res, 200, { reply });
   } catch (err) {
-    return json(res, 500, { error: "server_error", detail: String(err && err.message ? err.message : err) });
+    return json(res, 500, { error: err.message });
   }
 };
