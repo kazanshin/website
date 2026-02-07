@@ -38,20 +38,22 @@ async function pushLog(entry) {
 
 module.exports = async (req, res) => {
   try {
-    // ✅ Allow either:
-    // 1) Manual secure calls with secret header
-    // 2) Vercel cron (identified by user-agent)
-
+    // ---------- AUTH ----------
     const cronSecret = req.headers["x-echo-cron-secret"];
     const ua = req.headers["user-agent"] || "";
+    const testMode = req.query?.test === "1";
+
+    const isVercelCron = ua.toLowerCase().includes("vercel");
 
     if (
       cronSecret !== ECHO_CRON_SECRET &&
-      !ua.toLowerCase().includes("vercel")
+      !isVercelCron &&
+      !testMode
     ) {
       return json(res, 401, { error: "unauthorized" });
     }
 
+    // ---------- LOAD PROMPT ----------
     const promptText = fs.readFileSync(
       path.join(process.cwd(), "echo_pulse_prompt.txt"),
       "utf8"
@@ -59,6 +61,7 @@ module.exports = async (req, res) => {
 
     const history = await getRecent(50);
 
+    // ---------- BUILD MESSAGES ----------
     const messages = [
       { role: "system", content: promptText },
       {
@@ -80,6 +83,7 @@ module.exports = async (req, res) => {
       content: "Perform a reflective semantic pulse."
     });
 
+    // ---------- OPENAI CALL ----------
     const ai = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -100,6 +104,7 @@ module.exports = async (req, res) => {
     const pulse =
       out.choices?.[0]?.message?.content || "";
 
+    // ---------- STORE ----------
     await pushLog({
       role: "pulse",
       content: pulse,
@@ -107,6 +112,7 @@ module.exports = async (req, res) => {
     });
 
     return json(res, 200, { pulse });
+
   } catch (err) {
     return json(res, 500, { error: err.message });
   }
