@@ -8,6 +8,10 @@ const ECHO_UI_SECRET = process.env.ECHO_UI_SECRET;
 
 const LOG_KEY = "echo:log";
 
+// --- MEMORY SETTINGS ---
+const COMPRESS_AT = 2000;     // when to compress
+const COMPRESS_BATCH = 500;   // how many to compress
+
 async function redis(cmd) {
   const r = await fetch(KV_REST_API_URL, {
     method: "POST",
@@ -17,7 +21,6 @@ async function redis(cmd) {
     },
     body: JSON.stringify(cmd)
   });
-
   return r.json();
 }
 
@@ -30,10 +33,76 @@ async function pushLog(entry) {
   await redis(["RPUSH", LOG_KEY, JSON.stringify(entry)]);
 }
 
+// --- AUTO COMPRESSION ---
+async function compressMemoryIfNeeded() {
+
+  const lenRes = await redis(["LLEN", LOG_KEY]);
+  const len = lenRes.result || 0;
+
+  if (len < COMPRESS_AT) return;
+
+  console.log("Memory compression triggered");
+
+  // get oldest entries
+  const slice = await redis(["LRANGE", LOG_KEY, "0", `${COMPRESS_BATCH-1}`]);
+  const entries = (slice.result || []).map(x => JSON.parse(x));
+
+  // build text block
+  const textBlock = entries
+    .filter(e => e.role === "user" || e.role === "assistant")
+    .map(e => `${e.role}: ${e.content}`)
+    .join("\n");
+
+  if (!textBlock) return;
+
+  // summarize
+  const ai = await fetch(
+    "https://api.openai.com/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        temperature: 0.2,
+        messages: [
+          {
+            role: "system",
+            content: "You compress interaction history into faithful long-term memory."
+          },
+          {
+            role: "user",
+            content:
+              `Summarize this for persistent memory. Preserve core values, themes, and identity. Be faithful and neutral.\n\n${textBlock}`
+          }
+        ]
+      })
+    }
+  );
+
+  const out = await ai.json();
+  const summary = out.choices?.[0]?.message?.content || "";
+
+  if (!summary) return;
+
+  // store memory summary
+  await pushLog({
+    role: "memory",
+    content: summary,
+    ts: new Date().toISOString(),
+    kind: "summary"
+  });
+
+  // delete compressed entries
+  await redis(["LTRIM", LOG_KEY, `${COMPRESS_BATCH}`, "-1"]);
+}
+
 module.exports = async (req, res) => {
   try {
 
-    // ---------- AUTH ----------
+    // --- AUTH ---
     if (req.headers["x-echo-secret"] !== ECHO_UI_SECRET) {
       res.statusCode = 401;
       return res.end("unauthorized");
@@ -41,7 +110,7 @@ module.exports = async (req, res) => {
 
     const url = new URL(req.url, `https://${req.headers.host}`);
 
-    // ---------- GET LOGS ----------
+    // --- GET LOGS ---
     if (req.method === "GET" && url.searchParams.get("logs") === "1") {
       const limit = Number(url.searchParams.get("limit")) || 50;
       const logs = await getRecent(limit);
@@ -49,7 +118,7 @@ module.exports = async (req, res) => {
       return res.end(JSON.stringify({ logs }));
     }
 
-    // ---------- POST MESSAGE ----------
+    // --- POST MESSAGE ---
     if (req.method !== "POST") {
       res.statusCode = 405;
       return res.end("method not allowed");
@@ -73,10 +142,7 @@ module.exports = async (req, res) => {
 
     const messages = [
       { role: "system", content: promptText },
-      {
-        role: "system",
-        content: "The interaction log is persistent memory."
-      }
+      { role: "system", content: "The interaction log is persistent memory." }
     ];
 
     for (const h of history) {
@@ -95,7 +161,7 @@ module.exports = async (req, res) => {
       ts: new Date().toISOString()
     });
 
-    // ---------- STREAM RESPONSE ----------
+    // get reply
     const ai = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -107,55 +173,26 @@ module.exports = async (req, res) => {
         body: JSON.stringify({
           model: "gpt-4o",
           messages,
-          temperature: 0.4,
-          stream: true
+          temperature: 0.4
         })
       }
     );
 
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.setHeader("Transfer-Encoding", "chunked");
+    const out = await ai.json();
+    const reply = out.choices?.[0]?.message?.content || "";
 
-    const reader = ai.body.getReader();
-    const decoder = new TextDecoder();
-
-    let fullReply = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value);
-      const lines = chunk.split("\n");
-
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-
-        const data = line.slice(6);
-
-        if (data === "[DONE]") continue;
-
-        try {
-          const parsed = JSON.parse(data);
-          const token =
-            parsed.choices?.[0]?.delta?.content || "";
-
-          if (token) {
-            fullReply += token;
-            res.write(token);
-          }
-        } catch {}
-      }
-    }
-
-    res.end();
-
-    // log assistant after stream completes
+    // log assistant
     await pushLog({
       role: "assistant",
-      content: fullReply,
+      content: reply,
       ts: new Date().toISOString()
     });
+
+    // --- trigger compression if needed ---
+    await compressMemoryIfNeeded();
+
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ reply }));
 
   } catch (err) {
     res.statusCode = 500;
