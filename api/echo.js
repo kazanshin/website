@@ -189,7 +189,7 @@ module.exports = async (req, res) => {
     });
 
     // --- trigger compression if needed ---
-    await compressMemoryIfNeeded();
+    compressMemoryIfNeeded().catch(console.error);
 
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify({ reply }));
