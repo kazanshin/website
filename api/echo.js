@@ -9,8 +9,8 @@ const ECHO_UI_SECRET = process.env.ECHO_UI_SECRET;
 const LOG_KEY = "echo:log";
 
 // --- MEMORY SETTINGS ---
-const COMPRESS_AT = 2000;     // when to compress
-const COMPRESS_BATCH = 500;   // how many to compress
+const COMPRESS_AT = 10;     // when to compress
+const COMPRESS_BATCH = 3;   // how many to compress
 
 async function redis(cmd) {
   const r = await fetch(KV_REST_API_URL, {
