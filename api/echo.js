@@ -8,9 +8,9 @@ const ECHO_UI_SECRET = process.env.ECHO_UI_SECRET;
 
 const LOG_KEY = "echo:log";
 
-// --- MEMORY SETTINGS ---
-const COMPRESS_AT = 10;     // when to compress
-const COMPRESS_BATCH = 3;   // how many to compress
+// memory compression settings
+const COMPRESS_AT = 2000;
+const COMPRESS_BATCH = 500;
 
 async function redis(cmd) {
   const r = await fetch(KV_REST_API_URL, {
@@ -33,76 +33,73 @@ async function pushLog(entry) {
   await redis(["RPUSH", LOG_KEY, JSON.stringify(entry)]);
 }
 
-// --- AUTO COMPRESSION ---
+// background memory compression
 async function compressMemoryIfNeeded() {
+  try {
+    const lenRes = await redis(["LLEN", LOG_KEY]);
+    const len = lenRes.result || 0;
+    if (len < COMPRESS_AT) return;
 
-  const lenRes = await redis(["LLEN", LOG_KEY]);
-  const len = lenRes.result || 0;
+    const slice = await redis(["LRANGE", LOG_KEY, "0", `${COMPRESS_BATCH - 1}`]);
+    const entries = (slice.result || []).map(x => JSON.parse(x));
 
-  if (len < COMPRESS_AT) return;
+    const textBlock = entries
+      .filter(e => e.role === "user" || e.role === "assistant")
+      .map(e => `${e.role}: ${e.content}`)
+      .join("\n");
 
-  console.log("Memory compression triggered");
+    if (!textBlock) return;
 
-  // get oldest entries
-  const slice = await redis(["LRANGE", LOG_KEY, "0", `${COMPRESS_BATCH-1}`]);
-  const entries = (slice.result || []).map(x => JSON.parse(x));
+    const ai = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          temperature: 0.2,
+          messages: [
+            {
+              role: "system",
+              content: "Compress interaction history into faithful long-term memory. Do not invent facts."
+            },
+            {
+              role: "user",
+              content:
+                "Summarize for durable memory. Only keep stable goals, values, or projects. If nothing important, reply NO MEMORY.\n\n" +
+                textBlock
+            }
+          ]
+        })
+      }
+    );
 
-  // build text block
-  const textBlock = entries
-    .filter(e => e.role === "user" || e.role === "assistant")
-    .map(e => `${e.role}: ${e.content}`)
-    .join("\n");
+    const out = await ai.json();
+    const summary = out.choices?.[0]?.message?.content;
 
-  if (!textBlock) return;
+    if (!summary || summary === "NO MEMORY") return;
 
-  // summarize
-  const ai = await fetch(
-    "https://api.openai.com/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        temperature: 0.2,
-        messages: [
-          {
-            role: "system",
-            content: "You compress interaction history into faithful long-term memory."
-          },
-          {
-            role: "user",
-            content:
-              `Summarize this for persistent memory. Preserve core values, themes, and identity. Be faithful and neutral.\n\n${textBlock}`
-          }
-        ]
-      })
-    }
-  );
+    await pushLog({
+      role: "memory",
+      content: summary,
+      ts: new Date().toISOString(),
+      kind: "summary"
+    });
 
-  const out = await ai.json();
-  const summary = out.choices?.[0]?.message?.content || "";
+    await redis(["LTRIM", LOG_KEY, `${COMPRESS_BATCH}`, "-1"]);
 
-  if (!summary) return;
-
-  // store memory summary
-  await pushLog({
-    role: "memory",
-    content: summary,
-    ts: new Date().toISOString(),
-    kind: "summary"
-  });
-
-  // delete compressed entries
-  await redis(["LTRIM", LOG_KEY, `${COMPRESS_BATCH}`, "-1"]);
+  } catch (e) {
+    console.error("compression error", e);
+  }
 }
 
 module.exports = async (req, res) => {
   try {
 
-    // --- AUTH ---
+    // auth
     if (req.headers["x-echo-secret"] !== ECHO_UI_SECRET) {
       res.statusCode = 401;
       return res.end("unauthorized");
@@ -110,7 +107,7 @@ module.exports = async (req, res) => {
 
     const url = new URL(req.url, `https://${req.headers.host}`);
 
-    // --- GET LOGS ---
+    // get logs
     if (req.method === "GET" && url.searchParams.get("logs") === "1") {
       const limit = Number(url.searchParams.get("limit")) || 50;
       const logs = await getRecent(limit);
@@ -118,7 +115,7 @@ module.exports = async (req, res) => {
       return res.end(JSON.stringify({ logs }));
     }
 
-    // --- POST MESSAGE ---
+    // post message
     if (req.method !== "POST") {
       res.statusCode = 405;
       return res.end("method not allowed");
@@ -142,26 +139,33 @@ module.exports = async (req, res) => {
 
     const messages = [
       { role: "system", content: promptText },
-      { role: "system", content: "The interaction log is persistent memory." }
+      { role: "system", content: "Interaction log is persistent memory." }
     ];
 
     for (const h of history) {
+      let role = h.role;
+
+      if (role === "pulse") role = "assistant";
+      if (role === "memory") role = "system";
+
+      if (role !== "system" && role !== "user" && role !== "assistant") {
+        continue;
+      }
+
       messages.push({
-        role: h.role === "pulse" ? "assistant" : h.role,
+        role,
         content: h.content
       });
     }
 
     messages.push({ role: "user", content: message });
 
-    // log user
     await pushLog({
       role: "user",
       content: message,
       ts: new Date().toISOString()
     });
 
-    // get reply
     const ai = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -179,19 +183,19 @@ module.exports = async (req, res) => {
     );
 
     const out = await ai.json();
-    const reply =
-    out.choices?.[0]?.message?.content ||
-    "(no response)";
 
-    // log assistant
+    const reply =
+      out.choices?.[0]?.message?.content ||
+      "(no response)";
+
     await pushLog({
       role: "assistant",
       content: reply,
       ts: new Date().toISOString()
     });
 
-    // --- trigger compression if needed ---
-    compressMemoryIfNeeded().catch(console.error);
+    // fire-and-forget compression
+    compressMemoryIfNeeded();
 
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify({ reply }));
