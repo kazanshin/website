@@ -138,7 +138,7 @@ module.exports = async (req, res) => {
       "utf8"
     );
 
-    const history = await getRecent(50);
+    const history = await getRecent(15);
 
     const messages = [
       { role: "system", content: promptText },
