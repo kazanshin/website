@@ -1,90 +1,124 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>echo-logs</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>echo-logs</title>
 
-  <style>
-    body {
-      font-family: monospace;
-      margin: 20px;
-    }
+<style>
+body {
+  font-family: monospace;
+  margin: 20px;
+}
 
-    #out {
-      white-space: pre-wrap;
-      word-break: break-word;
-      overflow-wrap: anywhere;
-      border: 1px solid #ccc;
-      padding: 10px;
-      max-width: 1000px;
-      max-height: 70vh;
-      overflow-y: auto;
-      background: #fafafa;
-    }
-  </style>
+#out {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  border: 1px solid #ccc;
+  padding: 10px;
+  max-width: 1000px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #fafafa;
+}
+.entry {
+  margin-bottom: 16px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+.meta {
+  color: #666;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+</style>
 </head>
 
 <body>
-  <pre id="status">locked</pre>
-  <button id="refresh">refresh</button>
 
-  <pre id="out">loading...</pre>
+<pre id="status">locked</pre>
+<button id="refresh">refresh</button>
 
-  <script>
-    (function () {
-      const statusEl = document.getElementById("status");
-      const outEl = document.getElementById("out");
-      const refreshBtn = document.getElementById("refresh");
+<div id="out">loading...</div>
 
-      let secret = "";
+<script>
+(function () {
 
-      function lock() {
-        secret = "";
-        statusEl.textContent = "locked";
-      }
+const statusEl = document.getElementById("status");
+const outEl = document.getElementById("out");
+const refreshBtn = document.getElementById("refresh");
 
-      function unlock() {
-        const p = prompt("passphrase:");
-        if (!p) return lock();
-        secret = p;
-        statusEl.textContent = "unlocked";
-      }
+let secret = "";
 
-      async function refresh() {
-        outEl.textContent = "loading...";
+function lock() {
+  secret = "";
+  statusEl.textContent = "locked";
+}
 
-        try {
-          const r = await fetch("/api/echo?logs=1&limit=50", {
-            method: "GET",
-            headers: {
-              "x-echo-secret": secret,
-            },
-          });
+function unlock() {
+  const p = prompt("passphrase:");
+  if (!p) return lock();
+  secret = p;
+  statusEl.textContent = "unlocked";
+}
 
-          const j = await r.json().catch(() => ({}));
+async function refresh() {
 
-          // Pretty but wrapped
-          outEl.textContent = JSON.stringify(j, null, 2);
+  outEl.textContent = "loading...";
 
-        } catch (e) {
-          outEl.textContent = String(e);
-        }
-      }
+  try {
+    const r = await fetch("/api/echo?logs=1&limit=50", {
+      headers: { "x-echo-secret": secret }
+    });
 
-      unlock();
-      refresh();
+    const j = await r.json();
 
-      refreshBtn.addEventListener("click", refresh);
+    if (!Array.isArray(j.logs)) {
+      outEl.textContent = JSON.stringify(j, null, 2);
+      return;
+    }
 
-      window.addEventListener("keydown", function (e) {
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "l") {
-          e.preventDefault();
-          unlock();
-          refresh();
-        }
-      });
-    })();
-  </script>
+    outEl.innerHTML = "";
+
+    j.logs.forEach(entry => {
+
+      const div = document.createElement("div");
+      div.className = "entry";
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent =
+        `[${entry.ts || ""}] ${entry.role || ""}`;
+
+      const body = document.createElement("div");
+      body.textContent = entry.content || "";
+
+      div.appendChild(meta);
+      div.appendChild(body);
+      outEl.appendChild(div);
+    });
+
+  } catch (e) {
+    outEl.textContent = String(e);
+  }
+}
+
+unlock();
+refresh();
+
+refreshBtn.onclick = refresh;
+
+window.addEventListener("keydown", function (e) {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "l") {
+    e.preventDefault();
+    unlock();
+    refresh();
+  }
+});
+
+})();
+</script>
+
 </body>
 </html>
