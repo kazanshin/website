@@ -179,7 +179,9 @@ module.exports = async (req, res) => {
     );
 
     const out = await ai.json();
-    const reply = out.choices?.[0]?.message?.content || "";
+    const reply =
+    out.choices?.[0]?.message?.content ||
+    "(no response)";
 
     // log assistant
     await pushLog({
