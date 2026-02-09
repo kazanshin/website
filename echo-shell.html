@@ -54,8 +54,8 @@ async function send() {
 
   const j = await r.json();
 
-  // pretty print JSON manually
-  out.textContent = JSON.stringify(j, null, 2);
+  // ✅ FIX: display reply instead of raw JSON
+  out.textContent = j.reply || "(no reply)";
 
   box.value = "";
   window.scrollTo(0, document.body.scrollHeight);
