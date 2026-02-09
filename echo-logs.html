@@ -68,7 +68,7 @@ async function refresh() {
   outEl.textContent = "loading...";
 
   try {
-    const r = await fetch("/api/echo?logs=1&limit=50", {
+    const r = await fetch("/api/echo?logs=1&limit=100", {
       headers: { "x-echo-secret": secret }
     });
 
