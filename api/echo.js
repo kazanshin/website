@@ -8,12 +8,6 @@ const ECHO_UI_SECRET = process.env.ECHO_UI_SECRET;
 
 const LOG_KEY = "echo:log";
 
-function json(res, status, data) {
-  res.statusCode = status;
-  res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify(data));
-}
-
 async function redis(cmd) {
   const r = await fetch(KV_REST_API_URL, {
     method: "POST",
@@ -38,9 +32,11 @@ async function pushLog(entry) {
 
 module.exports = async (req, res) => {
   try {
+
     // ---------- AUTH ----------
     if (req.headers["x-echo-secret"] !== ECHO_UI_SECRET) {
-      return json(res, 401, { error: "unauthorized" });
+      res.statusCode = 401;
+      return res.end("unauthorized");
     }
 
     const url = new URL(req.url, `https://${req.headers.host}`);
@@ -49,19 +45,24 @@ module.exports = async (req, res) => {
     if (req.method === "GET" && url.searchParams.get("logs") === "1") {
       const limit = Number(url.searchParams.get("limit")) || 50;
       const logs = await getRecent(limit);
-      return json(res, 200, { logs });
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ logs }));
     }
 
     // ---------- POST MESSAGE ----------
     if (req.method !== "POST") {
-      return json(res, 405, { error: "method not allowed" });
+      res.statusCode = 405;
+      return res.end("method not allowed");
     }
 
     let body = "";
     for await (const chunk of req) body += chunk;
 
     const { message } = JSON.parse(body || "{}");
-    if (!message) return json(res, 400, { error: "missing message" });
+    if (!message) {
+      res.statusCode = 400;
+      return res.end("missing message");
+    }
 
     const promptText = fs.readFileSync(
       path.join(process.cwd(), "echo_pulse_prompt.txt"),
@@ -74,8 +75,7 @@ module.exports = async (req, res) => {
       { role: "system", content: promptText },
       {
         role: "system",
-        content:
-          "The interaction log is persistent memory. Treat it as factual history."
+        content: "The interaction log is persistent memory."
       }
     ];
 
@@ -95,6 +95,7 @@ module.exports = async (req, res) => {
       ts: new Date().toISOString()
     });
 
+    // ---------- STREAM RESPONSE ----------
     const ai = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -106,25 +107,58 @@ module.exports = async (req, res) => {
         body: JSON.stringify({
           model: "gpt-4o",
           messages,
-          temperature: 0.4
+          temperature: 0.4,
+          stream: true
         })
       }
     );
 
-    const out = await ai.json();
-    const reply =
-      out.choices?.[0]?.message?.content || "";
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Transfer-Encoding", "chunked");
 
-    // log assistant
+    const reader = ai.body.getReader();
+    const decoder = new TextDecoder();
+
+    let fullReply = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split("\n");
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+
+        const data = line.slice(6);
+
+        if (data === "[DONE]") continue;
+
+        try {
+          const parsed = JSON.parse(data);
+          const token =
+            parsed.choices?.[0]?.delta?.content || "";
+
+          if (token) {
+            fullReply += token;
+            res.write(token);
+          }
+        } catch {}
+      }
+    }
+
+    res.end();
+
+    // log assistant after stream completes
     await pushLog({
       role: "assistant",
-      content: reply,
+      content: fullReply,
       ts: new Date().toISOString()
     });
 
-    return json(res, 200, { reply });
-
   } catch (err) {
-    return json(res, 500, { error: err.message });
+    res.statusCode = 500;
+    res.end(err.message);
   }
 };
