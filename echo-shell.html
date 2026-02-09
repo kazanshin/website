@@ -1,31 +1,64 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>echo-shell</title>
+<meta charset="utf-8">
+<title>echo-shell</title>
+
+<style>
+body {
+  font-family: monospace;
+  margin: 20px;
+}
+
+#out {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 900px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-top: 10px;
+  min-height: 120px;
+}
+
+#logPanel {
+  display: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-top: 10px;
+  max-height: 40vh;
+  overflow-y: auto;
+  background: #fafafa;
+}
+</style>
 </head>
+
 <body>
 
 <pre id="status">locked</pre>
 
 <textarea id="msg" rows="6" cols="80" placeholder="message"></textarea>
 <br>
-<button id="send">send</button>
 
-<div id="out" style="
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  max-width: 900px;
-  font-family: monospace;
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-top: 10px;
-"></div>
+<button id="send">send</button>
+<button id="toggleLogs">logs</button>
+
+<div id="out"></div>
+<div id="logPanel"></div>
 
 <script>
 let secret = "";
 
+const msgBox = document.getElementById("msg");
+const out = document.getElementById("out");
+const logPanel = document.getElementById("logPanel");
+
+//
+// Unlock
+//
 function unlock() {
   const p = prompt("passphrase:");
   if (!p) return;
@@ -35,13 +68,27 @@ function unlock() {
 
 unlock();
 
+//
+// Local draft persistence
+//
+msgBox.value = localStorage.getItem("echo-draft") || "";
+
+msgBox.addEventListener("input", () => {
+  localStorage.setItem("echo-draft", msgBox.value);
+});
+
+//
+// Send with streaming
+//
 async function send() {
-  const box = document.getElementById("msg");
-  const message = box.value.trim();
+
+  const message = msgBox.value.trim();
   if (!message) return;
 
-  const out = document.getElementById("out");
-  out.textContent = "sending...";
+  localStorage.removeItem("echo-draft");
+
+  out.textContent = "";
+  msgBox.value = "";
 
   const r = await fetch("/api/echo", {
     method: "POST",
@@ -52,23 +99,68 @@ async function send() {
     body: JSON.stringify({ message })
   });
 
-  const j = await r.json();
+  if (!r.body) {
+    out.textContent = "no stream";
+    return;
+  }
 
-  // ✅ FIX: display reply instead of raw JSON
-  out.textContent = j.reply || "(no reply)";
+  const reader = r.body.getReader();
+  const decoder = new TextDecoder();
 
-  box.value = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    out.textContent += decoder.decode(value);
+  }
+
   window.scrollTo(0, document.body.scrollHeight);
 }
 
 document.getElementById("send").onclick = send;
 
-document.getElementById("msg").addEventListener("keydown", e => {
+//
+// Ctrl/Cmd+Enter to send
+//
+msgBox.addEventListener("keydown", e => {
   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     send();
   }
 });
+
+//
+// Log toggle
+//
+document.getElementById("toggleLogs").onclick = async () => {
+
+  if (logPanel.style.display === "block") {
+    logPanel.style.display = "none";
+    return;
+  }
+
+  logPanel.textContent = "loading...";
+  logPanel.style.display = "block";
+
+  const r = await fetch("/api/echo?logs=1&limit=100", {
+    headers: { "x-echo-secret": secret }
+  });
+
+  const j = await r.json();
+
+  if (!Array.isArray(j.logs)) {
+    logPanel.textContent = JSON.stringify(j, null, 2);
+    return;
+  }
+
+  logPanel.textContent = "";
+
+  j.logs.forEach(e => {
+    logPanel.textContent +=
+      `[${e.ts || ""}] ${e.role || ""}\n${e.content || ""}\n\n`;
+  });
+
+  logPanel.scrollTop = logPanel.scrollHeight;
+};
 </script>
 
 </body>
