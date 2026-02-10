@@ -56,9 +56,6 @@ const msgBox = document.getElementById("msg");
 const out = document.getElementById("out");
 const logPanel = document.getElementById("logPanel");
 
-//
-// Unlock
-//
 function unlock() {
   const p = prompt("passphrase:");
   if (!p) return;
@@ -68,18 +65,12 @@ function unlock() {
 
 unlock();
 
-//
-// Local draft persistence
-//
 msgBox.value = localStorage.getItem("echo-draft") || "";
 
 msgBox.addEventListener("input", () => {
   localStorage.setItem("echo-draft", msgBox.value);
 });
 
-//
-// Send with streaming
-//
 async function send() {
 
   const message = msgBox.value.trim();
@@ -99,39 +90,15 @@ async function send() {
     body: JSON.stringify({ message })
   });
 
-  if (!r.body) {
-    out.textContent = "no stream";
-    return;
-  }
+  // ✅ Parse as JSON instead of streaming raw text
+  const data = await r.json();
 
-  const reader = r.body.getReader();
-  const decoder = new TextDecoder();
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    let chunk = decoder.decode(value);
-
-    // 🔥 Fix newline escapes
-    chunk = chunk.replace(/\\n/g, "\n");
-
-    // 🔥 Remove JSON wrapping quotes if present
-    if (chunk.startsWith('"') && chunk.endsWith('"')) {
-      chunk = chunk.slice(1, -1);
-    }
-
-    out.textContent += chunk;
-  }
-
-  window.scrollTo(0, document.body.scrollHeight);
+  // ✅ Show only the reply field
+  out.textContent = data.reply || "(no reply)";
 }
 
 document.getElementById("send").onclick = send;
 
-//
-// Ctrl/Cmd+Enter to send
-//
 msgBox.addEventListener("keydown", e => {
   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
@@ -139,9 +106,6 @@ msgBox.addEventListener("keydown", e => {
   }
 });
 
-//
-// Log toggle
-//
 document.getElementById("toggleLogs").onclick = async () => {
 
   if (logPanel.style.display === "block") {
@@ -173,6 +137,7 @@ document.getElementById("toggleLogs").onclick = async () => {
   logPanel.scrollTop = logPanel.scrollHeight;
 };
 </script>
+
 
 </body>
 </html>
