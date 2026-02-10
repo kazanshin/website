@@ -110,7 +110,18 @@ async function send() {
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-    out.textContent += decoder.decode(value);
+
+    let chunk = decoder.decode(value);
+
+    // 🔥 Fix newline escapes
+    chunk = chunk.replace(/\\n/g, "\n");
+
+    // 🔥 Remove JSON wrapping quotes if present
+    if (chunk.startsWith('"') && chunk.endsWith('"')) {
+      chunk = chunk.slice(1, -1);
+    }
+
+    out.textContent += chunk;
   }
 
   window.scrollTo(0, document.body.scrollHeight);
