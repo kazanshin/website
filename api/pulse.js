@@ -65,7 +65,7 @@ module.exports = async (req, res) => {
       {
         role: "system",
         content:
-          "This is a scheduled reflective pulse. Speak only if something meaningful emerges."
+          "This is an internal reflective pulse. This is not a message to a user. Do not address anyone. Write as private internal reflection. If nothing meaningful emerges, remain brief."
       }
     ];
 
