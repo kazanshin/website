@@ -23,7 +23,6 @@ async function redis(cmd) {
     },
     body: JSON.stringify(cmd)
   });
-
   return r.json();
 }
 
@@ -38,11 +37,10 @@ async function pushLog(entry) {
 
 module.exports = async (req, res) => {
   try {
-    // ---------- PARSE URL ----------
+
     const url = new URL(req.url, `https://${req.headers.host}`);
     const testMode = url.searchParams.get("test") === "1";
 
-    // ---------- AUTH ----------
     const cronSecret = req.headers["x-echo-cron-secret"];
     const ua = req.headers["user-agent"] || "";
     const isVercelCron = ua.toLowerCase().includes("vercel");
@@ -55,7 +53,6 @@ module.exports = async (req, res) => {
       return json(res, 401, { error: "unauthorized" });
     }
 
-    // ---------- LOAD PROMPT ----------
     const promptText = fs.readFileSync(
       path.join(process.cwd(), "echo_pulse_prompt.txt"),
       "utf8"
@@ -63,7 +60,6 @@ module.exports = async (req, res) => {
 
     const history = await getRecent(50);
 
-    // ---------- BUILD MESSAGES ----------
     const messages = [
       { role: "system", content: promptText },
       {
@@ -73,9 +69,20 @@ module.exports = async (req, res) => {
       }
     ];
 
+    // ✅ SAFE ROLE MAPPING
     for (const h of history) {
+
+      let role = h.role;
+
+      if (role === "pulse") role = "assistant";
+      if (role === "memory") role = "system";
+
+      if (role !== "system" && role !== "user" && role !== "assistant") {
+        continue;
+      }
+
       messages.push({
-        role: h.role === "pulse" ? "assistant" : h.role,
+        role,
         content: h.content
       });
     }
@@ -85,7 +92,6 @@ module.exports = async (req, res) => {
       content: "Perform a reflective semantic pulse."
     });
 
-    // ---------- OPENAI CALL ----------
     const ai = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -106,7 +112,6 @@ module.exports = async (req, res) => {
     const pulse =
       out.choices?.[0]?.message?.content || "";
 
-    // ---------- STORE ----------
     await pushLog({
       role: "pulse",
       content: pulse,
