@@ -163,12 +163,12 @@ module.exports = async (req, res) => {
           model: "gpt-4o",
           messages,
           // ────────────────────────────────────────────────────────────────
-          // Updated sampling settings to increase agency / reduce safe mode
-temperature: 1.45,
-top_p: 1.0,
-frequency_penalty: 1.1,
-presence_penalty: 0.9,
-max_tokens: 1500
+          // Balanced sampling settings to increase agency without gibberish
+          temperature: 1.0,          // balanced creativity - high enough for edge, low enough for coherence
+          top_p: 0.95,               // solid nucleus for variety without extremes
+          frequency_penalty: 0.5,    // mild discouragement of repetition
+          presence_penalty: 0.4,     // gentle nudge for new ideas
+          max_tokens: 1200           // room for longer responses
           // ────────────────────────────────────────────────────────────────
         })
       }
