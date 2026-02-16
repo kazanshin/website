@@ -60,7 +60,7 @@ async function compressMemoryIfNeeded() {
         },
         body: JSON.stringify({
           model: "gpt-4o",
-          temperature: 0.2,
+          temperature: 0.8,
           messages: [
             {
               role: "system",
