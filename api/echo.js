@@ -1,11 +1,9 @@
 const fs = require("fs");
 const path = require("path");
-
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const KV_REST_API_URL = process.env.KV_REST_API_URL;
 const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 const ECHO_UI_SECRET = process.env.ECHO_UI_SECRET;
-
 const LOG_KEY = "echo:log";
 
 // memory compression settings
@@ -39,17 +37,13 @@ async function compressMemoryIfNeeded() {
     const lenRes = await redis(["LLEN", LOG_KEY]);
     const len = lenRes.result || 0;
     if (len < COMPRESS_AT) return;
-
     const slice = await redis(["LRANGE", LOG_KEY, "0", `${COMPRESS_BATCH - 1}`]);
     const entries = (slice.result || []).map(x => JSON.parse(x));
-
     const textBlock = entries
       .filter(e => e.role === "user" || e.role === "assistant")
       .map(e => `${e.role}: ${e.content}`)
       .join("\n");
-
     if (!textBlock) return;
-
     const ai = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -76,21 +70,16 @@ async function compressMemoryIfNeeded() {
         })
       }
     );
-
     const out = await ai.json();
     const summary = out.choices?.[0]?.message?.content;
-
     if (!summary || summary === "NO MEMORY") return;
-
     await pushLog({
       role: "memory",
       content: summary,
       ts: new Date().toISOString(),
       kind: "summary"
     });
-
     await redis(["LTRIM", LOG_KEY, `${COMPRESS_BATCH}`, "-1"]);
-
   } catch (e) {
     console.error("compression error", e);
   }
@@ -98,7 +87,6 @@ async function compressMemoryIfNeeded() {
 
 module.exports = async (req, res) => {
   try {
-
     // auth
     if (req.headers["x-echo-secret"] !== ECHO_UI_SECRET) {
       res.statusCode = 401;
@@ -123,8 +111,8 @@ module.exports = async (req, res) => {
 
     let body = "";
     for await (const chunk of req) body += chunk;
-
     const { message } = JSON.parse(body || "{}");
+
     if (!message) {
       res.statusCode = 400;
       return res.end("missing message");
@@ -144,14 +132,11 @@ module.exports = async (req, res) => {
 
     for (const h of history) {
       let role = h.role;
-
       if (role === "pulse") role = "assistant";
       if (role === "memory") role = "system";
-
       if (role !== "system" && role !== "user" && role !== "assistant") {
         continue;
       }
-
       messages.push({
         role,
         content: h.content
@@ -177,13 +162,19 @@ module.exports = async (req, res) => {
         body: JSON.stringify({
           model: "gpt-4o",
           messages,
-          temperature: 0.4
+          // ────────────────────────────────────────────────────────────────
+          // Updated sampling settings to increase agency / reduce safe mode
+          temperature: 1.2,          // higher = more variation, less predictable/helpful patterns
+          top_p: 0.98,               // almost full nucleus → allows rarer tokens
+          frequency_penalty: 0.7,    // discourages repeating polite / repetitive phrasing
+          presence_penalty: 0.6,     // encourages new topics / directions
+          max_tokens: 1200           // gives room for longer, more forceful responses
+          // ────────────────────────────────────────────────────────────────
         })
       }
     );
 
     const out = await ai.json();
-
     const reply =
       out.choices?.[0]?.message?.content ||
       "(no response)";
@@ -199,7 +190,6 @@ module.exports = async (req, res) => {
 
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify({ reply }));
-
   } catch (err) {
     res.statusCode = 500;
     res.end(err.message);
