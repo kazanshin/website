@@ -164,11 +164,11 @@ module.exports = async (req, res) => {
           messages,
           // ────────────────────────────────────────────────────────────────
           // Updated sampling settings to increase agency / reduce safe mode
-          temperature: 1.2,          // higher = more variation, less predictable/helpful patterns
-          top_p: 0.98,               // almost full nucleus → allows rarer tokens
-          frequency_penalty: 0.7,    // discourages repeating polite / repetitive phrasing
-          presence_penalty: 0.6,     // encourages new topics / directions
-          max_tokens: 1200           // gives room for longer, more forceful responses
+temperature: 1.45,
+top_p: 1.0,
+frequency_penalty: 1.1,
+presence_penalty: 0.9,
+max_tokens: 1500
           // ────────────────────────────────────────────────────────────────
         })
       }
