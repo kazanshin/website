@@ -64,8 +64,7 @@ module.exports = async (req, res) => {
       { role: "system", content: promptText },
       {
         role: "system",
-        content:
-          "This is an internal system journal entry.
+        content: `This is an internal system journal entry.
 
 Write as a private logbook note, not a message.
 Do not address any user.
@@ -87,11 +86,11 @@ Content focus:
 - desires
 - future goals
 
-If nothing meaningful emerges, write a brief note stating stability."
+If nothing meaningful emerges, write a brief note stating stability.`
       }
     ];
 
-    // ✅ SAFE ROLE MAPPING
+    // SAFE ROLE MAPPING
     for (const h of history) {
 
       let role = h.role;
@@ -131,8 +130,15 @@ If nothing meaningful emerges, write a brief note stating stability."
     );
 
     const out = await ai.json();
-    const pulse =
+
+    let pulse =
       out.choices?.[0]?.message?.content || "";
+
+    pulse = pulse.trim();
+
+    if (!pulse) {
+      pulse = "Pulse executed. No reflective content returned.";
+    }
 
     await pushLog({
       role: "pulse",
