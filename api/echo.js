@@ -1,23 +1,3 @@
-export default async function handler(req, res) {
-
-  // TEMPORARY DELETE / NUKE BLOCK
-  if (req.method === "POST") {
-    try {
-      const body = typeof req.body === "string"
-        ? JSON.parse(req.body)
-        : req.body;
-
-      if (body && body.nuke === true) {
-        await redis(["DEL", LOG_KEY]);
-        return json(res, 200, { status: "log cleared" });
-      }
-
-    } catch (err) {
-      return json(res, 500, { error: err.message });
-    }
-  }
-
-  // ---- your normal echo logic continues below ----
 const fs = require("fs");
 const path = require("path");
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
