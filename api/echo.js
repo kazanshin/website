@@ -195,3 +195,11 @@ module.exports = async (req, res) => {
     res.end(err.message);
   }
 };
+if (req.method === "POST" && req.body.deleteIndex !== undefined) {
+  const index = req.body.deleteIndex;
+
+  await redis(["LSET", LOG_KEY, index, "__DELETE_ME__"]);
+  await redis(["LREM", LOG_KEY, 1, "__DELETE_ME__"]);
+
+  return json(res, 200, { status: "deleted", index });
+}
