@@ -9,15 +9,16 @@ const ECHO_UI_SECRET = process.env.ECHO_UI_SECRET;
 const LOG_KEY = "echo:log";
 
 /* =========================
-   MEMORY SETTINGS
+   SETTINGS
 ========================= */
 
-const CONTEXT_RAW = 40;              // recent raw messages sent to model
-const COMPRESS_AT = 600;             // total log length trigger
-const COMPRESS_BATCH = 200;          // oldest raw entries to compress
+const RAW_CONTEXT_COUNT = 50;
 
-const MEMORY_CONSOLIDATE_AT = 8;     // number of memory blocks before meta consolidation
-const MEMORY_CONSOLIDATE_BATCH = 4;  // number of memory blocks to merge
+const COMPRESS_AT = 500;
+const COMPRESS_BATCH = 150;
+
+const MEMORY_CONSOLIDATE_AT = 10;
+const MEMORY_CONSOLIDATE_BATCH = 5;
 
 /* ========================= */
 
@@ -38,48 +39,29 @@ async function getAllLogs() {
   return (r.result || []).map(x => JSON.parse(x));
 }
 
-async function getRecentRaw(n) {
-  const all = await getAllLogs();
-  const raw = all.filter(e =>
-    ["user", "assistant", "pulse"].includes(e.role)
-  );
-  return raw.slice(-n);
-}
-
-async function getMemoryBlocks() {
-  const all = await getAllLogs();
-  return all.filter(e => e.kind === "memory");
-}
-
-async function getMetaMemoryBlocks() {
-  const all = await getAllLogs();
-  return all.filter(e => e.kind === "meta-memory");
-}
-
 async function pushLog(entry) {
   await redis(["RPUSH", LOG_KEY, JSON.stringify(entry)]);
 }
 
 /* =========================
-   COMPRESSION LOGIC
+   MEMORY COMPRESSION
 ========================= */
 
 async function compressIfNeeded() {
   const lenRes = await redis(["LLEN", LOG_KEY]);
   const len = lenRes.result || 0;
-
   if (len < COMPRESS_AT) return;
 
   const sliceRes = await redis(["LRANGE", LOG_KEY, "0", `${COMPRESS_BATCH - 1}`]);
   const entries = (sliceRes.result || []).map(x => JSON.parse(x));
 
-  const compressible = entries.filter(e =>
+  const rawEntries = entries.filter(e =>
     ["user", "assistant", "pulse"].includes(e.role)
   );
 
-  if (compressible.length === 0) return;
+  if (rawEntries.length === 0) return;
 
-  const textBlock = compressible
+  const textBlock = rawEntries
     .map(e => `${e.role}: ${e.content}`)
     .join("\n\n");
 
@@ -102,7 +84,7 @@ async function compressIfNeeded() {
           content: textBlock
         }
       ],
-      temperature: 0.4
+      temperature: 0.3
     })
   });
 
@@ -121,14 +103,14 @@ async function compressIfNeeded() {
 }
 
 async function consolidateMemoryIfNeeded() {
-  const memories = await getMemoryBlocks();
+  const logs = await getAllLogs();
+  const memories = logs.filter(e => e.kind === "memory");
+
   if (memories.length < MEMORY_CONSOLIDATE_AT) return;
 
   const toMerge = memories.slice(0, MEMORY_CONSOLIDATE_BATCH);
 
-  const textBlock = toMerge
-    .map(e => e.content)
-    .join("\n\n");
+  const textBlock = toMerge.map(e => e.content).join("\n\n");
 
   const ai = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -142,14 +124,14 @@ async function consolidateMemoryIfNeeded() {
         {
           role: "system",
           content:
-            "Consolidate these memory summaries into a higher-order continuity block. Remove redundancy but preserve structural meaning."
+            "Consolidate these memory summaries into a higher-order continuity block. Remove redundancy while preserving structural meaning."
         },
         {
           role: "user",
           content: textBlock
         }
       ],
-      temperature: 0.3
+      temperature: 0.2
     })
   });
 
@@ -157,21 +139,20 @@ async function consolidateMemoryIfNeeded() {
   const summary = out.choices?.[0]?.message?.content;
   if (!summary) return;
 
+  const remaining = logs.filter(e => !toMerge.includes(e));
+
+  await redis(["DEL", LOG_KEY]);
+
+  for (const entry of remaining) {
+    await pushLog(entry);
+  }
+
   await pushLog({
     role: "system",
     kind: "meta-memory",
     content: summary,
     ts: new Date().toISOString()
   });
-
-  // remove merged memory blocks
-  const all = await getAllLogs();
-  const remaining = all.filter(e => !toMerge.includes(e));
-
-  await redis(["DEL", LOG_KEY]);
-  for (const entry of remaining) {
-    await pushLog(entry);
-  }
 }
 
 /* =========================
@@ -217,14 +198,18 @@ module.exports = async (req, res) => {
       promptText = "Echo default prompt.";
     }
 
-    const rawRecent = await getRecentRaw(CONTEXT_RAW);
-    const memoryBlocks = await getMemoryBlocks();
-    const metaBlocks = await getMetaMemoryBlocks();
+    const logs = await getAllLogs();
+
+    const metaBlocks = logs.filter(e => e.kind === "meta-memory");
+    const memoryBlocks = logs.filter(e => e.kind === "memory");
+    const rawRecent = logs
+      .filter(e => ["user", "assistant", "pulse"].includes(e.role))
+      .slice(-RAW_CONTEXT_COUNT);
 
     const messages = [
       { role: "system", content: promptText },
       ...metaBlocks.map(e => ({ role: "system", content: e.content })),
-      ...memoryBlocks.slice(-5).map(e => ({ role: "system", content: e.content })),
+      ...memoryBlocks.map(e => ({ role: "system", content: e.content })),
       ...rawRecent.map(e => ({ role: e.role, content: e.content }))
     ];
 
@@ -260,7 +245,6 @@ module.exports = async (req, res) => {
       ts: new Date().toISOString()
     });
 
-    // background memory maintenance
     compressIfNeeded();
     consolidateMemoryIfNeeded();
 
