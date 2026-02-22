@@ -12,9 +12,9 @@ const LOG_KEY = "echo:log";
    BALANCED SETTINGS
 ========================= */
 
-const RAW_CONTEXT_COUNT = 40;      // strong recent memory
-const MAX_MEMORY_CHARS = 12000;    // healthy but bounded
-const MAX_MESSAGE_CHARS = 4000;    // prevent single-message explosions
+const RAW_CONTEXT_COUNT = 40;
+const MAX_MEMORY_CHARS = 12000;
+const MAX_MESSAGE_CHARS = 4000;
 const MODEL = "gpt-4o";
 const TEMPERATURE = 0.7;
 
@@ -96,14 +96,28 @@ async function callOpenAI(messages) {
 
 module.exports = async (req, res) => {
   try {
+
+    // --- AUTH ---
     if (req.headers["x-echo-secret"] !== ECHO_UI_SECRET) {
       res.statusCode = 401;
-      return res.end("unauthorized");
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ error: "unauthorized" }));
     }
 
+    const url = new URL(req.url, "https://dummy.local");
+
+    // --- GET LOGS ---
+    if (req.method === "GET" && url.searchParams.get("logs") === "1") {
+      const logs = await getAllLogs();
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ logs }));
+    }
+
+    // --- POST CHAT ---
     if (req.method !== "POST") {
       res.statusCode = 405;
-      return res.end("method not allowed");
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ error: "method not allowed" }));
     }
 
     let body = "";
@@ -113,7 +127,8 @@ module.exports = async (req, res) => {
 
     if (!message) {
       res.statusCode = 400;
-      return res.end("missing message");
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ error: "missing message" }));
     }
 
     let promptText = "";
@@ -128,7 +143,6 @@ module.exports = async (req, res) => {
 
     const logs = await getAllLogs();
 
-    // Collapse long-term memory and cap it
     const memoryText = clamp(
       logs
         .filter(e => e.kind === "memory")
