@@ -97,7 +97,6 @@ async function callOpenAI(messages) {
 module.exports = async (req, res) => {
   try {
 
-    // --- AUTH ---
     if (req.headers["x-echo-secret"] !== ECHO_UI_SECRET) {
       res.statusCode = 401;
       res.setHeader("Content-Type", "application/json");
@@ -106,14 +105,12 @@ module.exports = async (req, res) => {
 
     const url = new URL(req.url, "https://dummy.local");
 
-    // --- GET LOGS ---
     if (req.method === "GET" && url.searchParams.get("logs") === "1") {
       const logs = await getAllLogs();
       res.setHeader("Content-Type", "application/json");
       return res.end(JSON.stringify({ logs }));
     }
 
-    // --- POST CHAT ---
     if (req.method !== "POST") {
       res.statusCode = 405;
       res.setHeader("Content-Type", "application/json");
@@ -154,10 +151,19 @@ module.exports = async (req, res) => {
     const rawRecent = logs
       .filter(e => ["user", "assistant", "pulse"].includes(e.role))
       .slice(-RAW_CONTEXT_COUNT)
-      .map(e => ({
-        role: e.role,
-        content: clamp(e.content, MAX_MESSAGE_CHARS)
-      }));
+      .map(e => {
+        let role = e.role;
+
+        // 🔥 TRANSLATION BOUNDARY FIX
+        if (role === "pulse") {
+          role = "system";
+        }
+
+        return {
+          role,
+          content: clamp(e.content, MAX_MESSAGE_CHARS)
+        };
+      });
 
     const messages = [
       { role: "system", content: promptText }
