@@ -76,9 +76,6 @@ function extractChatCompletionText(out) {
 
 module.exports = async (req, res) => {
   try {
-    const url = new URL(req.url, `https://${req.headers.host}`);
-    const testMode = url.searchParams.get("test") === "1";
-
     const ua = req.headers["user-agent"] || "";
     const authHeader = req.headers["authorization"] || "";
     const bearerToken = authHeader.startsWith("Bearer ")
@@ -86,8 +83,7 @@ module.exports = async (req, res) => {
       : "";
 
     const isAuthorized =
-      testMode ||
-      (CRON_SECRET && bearerToken && bearerToken === CRON_SECRET);
+      CRON_SECRET && bearerToken && bearerToken === CRON_SECRET;
 
     if (!isAuthorized) {
       try {
