@@ -4,7 +4,7 @@ const path = require("path");
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const KV_REST_API_URL = process.env.KV_REST_API_URL;
 const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
-const ECHO_CRON_SECRET = process.env.ECHO_CRON_SECRET;
+const CRON_SECRET = process.env.CRON_SECRET;
 
 const LOG_KEY = "echo:log";
 
@@ -79,15 +79,27 @@ module.exports = async (req, res) => {
     const url = new URL(req.url, `https://${req.headers.host}`);
     const testMode = url.searchParams.get("test") === "1";
 
-    const cronSecret = req.headers["x-echo-cron-secret"];
     const ua = req.headers["user-agent"] || "";
-    const isVercelCron = ua.toLowerCase().includes("vercel");
+    const authHeader = req.headers["authorization"] || "";
+    const bearerToken = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : "";
 
-    if (
-      cronSecret !== ECHO_CRON_SECRET &&
-      !isVercelCron &&
-      !testMode
-    ) {
+    const isAuthorized =
+      testMode ||
+      (CRON_SECRET && bearerToken && bearerToken === CRON_SECRET);
+
+    if (!isAuthorized) {
+      try {
+        await pushLog({
+          role: "pulse_error",
+          content: `Unauthorized pulse request. Authorization present: ${!!authHeader}. UA: ${ua}`,
+          ts: new Date().toISOString()
+        });
+      } catch {
+        // Ignore logging failure for unauthorized requests.
+      }
+
       return json(res, 401, { error: "unauthorized" });
     }
 
@@ -104,6 +116,16 @@ module.exports = async (req, res) => {
 
     if (!promptText.trim()) {
       throw new Error("echo_pulse_prompt.txt is empty");
+    }
+
+    try {
+      await pushLog({
+        role: "pulse_debug",
+        content: "Pulse handler entered.",
+        ts: new Date().toISOString()
+      });
+    } catch {
+      // Ignore debug log failure here and let main flow continue.
     }
 
     const history = await getRecent(50);
@@ -179,7 +201,9 @@ If nothing meaningful emerges, write a brief note stating stability.`
     try {
       out = JSON.parse(rawText);
     } catch {
-      throw new Error(`OpenAI returned non-JSON response: ${rawText.slice(0, 500)}`);
+      throw new Error(
+        `OpenAI returned non-JSON response: ${rawText.slice(0, 500)}`
+      );
     }
 
     if (!ai.ok) {
@@ -218,7 +242,6 @@ If nothing meaningful emerges, write a brief note stating stability.`
     });
 
     return json(res, 200, { pulse });
-
   } catch (err) {
     try {
       await pushLog({
