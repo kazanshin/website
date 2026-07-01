@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Education Leadership & Learning Design Portfolio | Jayson Phillips</title>
+  <meta name="description" content="A selected portfolio of professional work by Jayson Phillips across school leadership, teacher development, critical thinking pedagogy, ESL/EFL, and international education." />
+  <meta name="author" content="Jayson Phillips" />
+
+  <!--
+    This page is intentionally self-contained.
+    No external images, PDFs, JavaScript libraries, or extra HTML pages are required.
+    Upload this file as /portfolio/index.html and it will work as-is.
+  -->
+
+  <meta property="og:title" content="Education Leadership & Learning Design Portfolio | Jayson Phillips" />
+  <meta property="og:description" content="Selected professional work across school leadership, teacher development, critical thinking pedagogy, ESL/EFL, and international education." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://jaysonphillips.com/portfolio/" />
+
+  <style>
+    :root {
+      --bg: #07111f;
+      --bg-soft: #0d1a2d;
+      --bg-card: rgba(13, 26, 45, 0.82);
+      --ink: #f4efe5;
+      --muted: #b8c3d4;
+      --quiet: #8794aa;
+      --line: rgba(244, 239, 229, 0.15);
+      --accent: #c8a96a;
+      --accent-soft: rgba(200, 169, 106, 0.15);
+      --blue-soft: rgba(106, 161, 200, 0.14);
+      --green-soft: rgba(112, 173, 137, 0.14);
+      --red-soft: rgba(193, 98, 86, 0.12);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+      --radius-xl: 32px;
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --max: 1120px;
+      --font-main: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--font-main);
+      line-height: 1.6;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(200, 169, 106, 0.18), transparent 30rem),
+        radial-gradient(circle at 86% 18%, rgba(106, 161, 200, 0.14), transparent 32rem),
+        radial-gradient(circle at 50% 104%, rgba(112, 173, 137, 0.10), transparent 38rem),
+        var(--bg);
+    }
+
+    a {
+      color: inherit;
+      text-decoration-color: rgba(200, 169, 106, 0.72);
+      text-underline-offset: 0.22em;
+    }
+
+    a:hover { text-decoration-color: var(--ink); }
+
+    .shell {
+      width: min(var(--max), calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -999px;
+      top: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--ink);
+      color: var(--bg);
+      z-index: 100;
+    }
+
+    .skip-link:focus { left: 12px; }
+
+    header { padding: 24px 0 18px; }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 780;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: linear-gradient(145deg, rgba(200, 169, 106, 0.26), rgba(106, 161, 200, 0.14));
+      color: var(--accent);
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      box-shadow: 0 0 28px rgba(200, 169, 106, 0.12);
+    }
+
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 14px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .nav-links a { text-decoration: none; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.16fr) minmax(280px, 0.84fr);
+      gap: 34px;
+      align-items: stretch;
+      padding: 70px 0 46px;
+    }
+
+    .eyebrow {
+      margin: 0 0 18px;
+      color: var(--accent);
+      font-weight: 780;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+    }
+
+    h1, h2, h3 { margin: 0; line-height: 1.08; }
+
+    h1 {
+      max-width: 880px;
+      font-family: var(--font-serif);
+      font-size: clamp(3rem, 6vw, 6.2rem);
+      font-weight: 620;
+      letter-spacing: -0.055em;
+    }
+
+    h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(2rem, 3vw, 3rem);
+      font-weight: 620;
+      letter-spacing: -0.035em;
+    }
+
+    h3 {
+      font-size: 1.18rem;
+      letter-spacing: -0.015em;
+    }
+
+    p { margin: 0; }
+
+    .hero-copy {
+      max-width: 735px;
+      margin-top: 24px;
+      color: var(--muted);
+      font-size: clamp(1.08rem, 1.55vw, 1.28rem);
+    }
+
+    .hero-copy p + p { margin-top: 16px; }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 12px 18px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(244, 239, 229, 0.06);
+      color: var(--ink);
+      font-weight: 740;
+      text-decoration: none;
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      border-color: rgba(200, 169, 106, 0.55);
+      background: rgba(244, 239, 229, 0.10);
+    }
+
+    .button.primary {
+      border-color: transparent;
+      background: var(--accent);
+      color: #10131b;
+    }
+
+    .hero-panel {
+      position: relative;
+      min-height: 100%;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(170deg, rgba(244, 239, 229, 0.08), transparent 42%),
+        rgba(13, 26, 45, 0.76);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-panel::before {
+      content: "";
+      position: absolute;
+      inset: -120px -80px auto auto;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: rgba(200, 169, 106, 0.15);
+      filter: blur(2px);
+    }
+
+    .panel-inner {
+      position: relative;
+      display: grid;
+      gap: 18px;
+      padding: 28px;
+    }
+
+    .panel-title {
+      color: var(--accent);
+      font-weight: 780;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      font-size: 0.76rem;
+    }
+
+    .focus-list {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .focus-list li {
+      padding: 14px 15px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(7, 17, 31, 0.28);
+      color: var(--muted);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .stat {
+      min-height: 104px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgba(244, 239, 229, 0.055);
+    }
+
+    .stat strong {
+      display: block;
+      font-family: var(--font-serif);
+      color: var(--ink);
+      font-size: 1.9rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 8px;
+      color: var(--quiet);
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    section { padding: 56px 0; }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 26px;
+    }
+
+    .section-head p {
+      max-width: 580px;
+      color: var(--muted);
+      font-size: 1.03rem;
+    }
+
+    .work-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .work-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 290px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--bg-card);
+      box-shadow: 0 16px 50px rgba(0, 0, 0, 0.20);
+    }
+
+    .work-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, var(--accent-soft), transparent 50%);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .work-card:nth-child(2)::after,
+    .work-card:nth-child(5)::after { background: linear-gradient(145deg, var(--blue-soft), transparent 50%); }
+    .work-card:nth-child(3)::after,
+    .work-card:nth-child(6)::after { background: linear-gradient(145deg, var(--green-soft), transparent 50%); }
+    .work-card:nth-child(4)::after { background: linear-gradient(145deg, var(--red-soft), transparent 50%); }
+
+    .work-card-content, .work-card-footer {
+      position: relative;
+      z-index: 1;
+      padding: 24px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 5px 10px;
+      border: 1px solid rgba(244, 239, 229, 0.16);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(7, 17, 31, 0.24);
+      font-size: 0.78rem;
+      font-weight: 720;
+    }
+
+    .work-card p {
+      margin-top: 14px;
+      color: var(--muted);
+    }
+
+    .work-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .status {
+      color: var(--quiet);
+      font-size: 0.88rem;
+    }
+
+    .card-link {
+      color: var(--accent);
+      font-weight: 780;
+      text-decoration: none;
+    }
+
+    .card-link:hover { color: var(--ink); }
+
+    .note-box {
+      margin-top: 24px;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgba(244, 239, 229, 0.055);
+      color: var(--muted);
+    }
+
+    .note-box strong { color: var(--ink); }
+
+    .snapshot-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .snapshot {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgba(13, 26, 45, 0.62);
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.16);
+      overflow: hidden;
+    }
+
+    .snapshot summary {
+      cursor: pointer;
+      padding: 22px 24px;
+      list-style: none;
+    }
+
+    .snapshot summary::-webkit-details-marker { display: none; }
+
+    .snapshot summary::after {
+      content: "+";
+      float: right;
+      color: var(--accent);
+      font-size: 1.3rem;
+      line-height: 1;
+    }
+
+    .snapshot[open] summary::after { content: "–"; }
+
+    .snapshot-title {
+      display: block;
+      color: var(--ink);
+      font-size: 1.08rem;
+      font-weight: 780;
+      letter-spacing: -0.015em;
+    }
+
+    .snapshot-subtitle {
+      display: block;
+      margin-top: 6px;
+      color: var(--quiet);
+      font-size: 0.94rem;
+    }
+
+    .snapshot-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 0 24px 24px;
+      color: var(--muted);
+    }
+
+    .snapshot-body h4 {
+      margin: 0 0 8px;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.76rem;
+    }
+
+    .snapshot-body ul {
+      margin: 0;
+      padding-left: 1.1rem;
+    }
+
+    .snapshot-body li + li { margin-top: 7px; }
+
+    .approach {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 28px;
+      align-items: start;
+    }
+
+    .principles {
+      display: grid;
+      gap: 14px;
+    }
+
+    .principle {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgba(244, 239, 229, 0.055);
+    }
+
+    .principle p {
+      margin-top: 8px;
+      color: var(--muted);
+    }
+
+    .connect-box {
+      padding: 34px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(145deg, rgba(200, 169, 106, 0.13), transparent 44%),
+        rgba(13, 26, 45, 0.76);
+      box-shadow: var(--shadow);
+    }
+
+    .connect-box p {
+      max-width: 760px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 1.08rem;
+    }
+
+    .contact-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    footer {
+      padding: 34px 0 42px;
+      color: var(--quiet);
+      border-top: 1px solid var(--line);
+      font-size: 0.92rem;
+    }
+
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 860px) {
+      .hero,
+      .approach,
+      .snapshot-body { grid-template-columns: 1fr; }
+
+      .hero { padding-top: 46px; }
+      .work-grid { grid-template-columns: 1fr; }
+      .section-head { align-items: start; flex-direction: column; }
+    }
+
+    @media (max-width: 560px) {
+      .shell { width: min(var(--max), calc(100% - 28px)); }
+      .nav { align-items: flex-start; flex-direction: column; }
+      .hero-actions .button,
+      .contact-actions .button { width: 100%; }
+      .stat-grid { grid-template-columns: 1fr; }
+      .work-card-footer { align-items: flex-start; flex-direction: column; }
+      .connect-box { padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="shell">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="/" aria-label="Jayson Phillips home">
+        <span class="brand-mark">JP</span>
+        <span>Jayson Phillips</span>
+      </a>
+      <div class="nav-links">
+        <a href="#selected-work">Selected Work</a>
+        <a href="#case-snapshots">Case Snapshots</a>
+        <a href="#approach">Approach</a>
+        <a href="#connect">Connect</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="shell hero" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Education Leadership · Learning Design · International Education</p>
+        <h1 id="page-title">Education Leadership & Learning Design Portfolio</h1>
+        <div class="hero-copy">
+          <p>I’m an education leader and Harvard Ed.M. candidate based in Seoul, working at the intersection of school leadership, teacher development, learning design, ESL/EFL, critical thinking, and international education.</p>
+          <p>My work focuses on building practical systems that help teachers teach better, students think more deeply, and schools improve in ways that are clear, humane, and sustainable.</p>
+        </div>
+        <div class="hero-actions" aria-label="Page actions">
+          <a class="button primary" href="#selected-work">View selected work</a>
+          <a class="button" href="mailto:twinkle.jaysonteacher@gmail.com">Contact</a>
+        </div>
+      </div>
+
+      <aside class="hero-panel" aria-label="Current professional focus">
+        <div class="panel-inner">
+          <p class="panel-title">Current focus</p>
+          <ul class="focus-list">
+            <li>School leadership and practical improvement systems</li>
+            <li>Teacher observation, coaching, and feedback design</li>
+            <li>Critical thinking pedagogy and assessment</li>
+            <li>International education, AI in education, and advanced learner development</li>
+          </ul>
+          <div class="stat-grid" aria-label="Professional context">
+            <div class="stat">
+              <strong>500+</strong>
+              <span>students in a large Seoul ESL/EFL academy context</span>
+            </div>
+            <div class="stat">
+              <strong>30+</strong>
+              <span>staff across teaching, administration, and leadership roles</span>
+            </div>
+            <div class="stat">
+              <strong>K–8</strong>
+              <span>curriculum, teacher development, and instructional systems</span>
+            </div>
+            <div class="stat">
+              <strong>Ed.M.</strong>
+              <span>Harvard Graduate School of Education candidate</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section id="selected-work" class="shell" aria-labelledby="selected-work-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Selected Work</p>
+          <h2 id="selected-work-title">Proof, not decoration.</h2>
+        </div>
+        <p>A curated set of work areas showing how I think about education systems, instructional quality, teacher support, and learning design. This page is designed to stand on its own, even before separate PDFs or artifact pages are added.</p>
+      </div>
+
+      <div class="work-grid">
+        <article class="work-card">
+          <div class="work-card-content">
+            <div class="tag-row"><span class="tag">Higher Education</span><span class="tag">Critical Thinking</span></div>
+            <h3>Critical Thinking Pedagogy</h3>
+            <p>Graduate-level work on critical thinking instruction, assessment, and institutional implementation in higher education, with attention to practical classroom routines and program-level coherence.</p>
+          </div>
+          <div class="work-card-footer">
+            <span class="status">Case snapshot included below</span>
+            <a class="card-link" href="#critical-thinking">Jump to snapshot</a>
+          </div>
+        </article>
+
+        <article class="work-card">
+          <div class="work-card-content">
+            <div class="tag-row"><span class="tag">Teacher Development</span><span class="tag">Feedback Systems</span></div>
+            <h3>Teacher Observation & Feedback Systems</h3>
+            <p>A practical observation framework designed to help school leaders focus feedback on teaching moves that promote or disrupt learning, rather than on vague performance impressions.</p>
+          </div>
+          <div class="work-card-footer">
+            <span class="status">Case snapshot included below</span>
+            <a class="card-link" href="#teacher-observation">Jump to snapshot</a>
+          </div>
+        </article>
+
+        <article class="work-card">
+          <div class="work-card-content">
+            <div class="tag-row"><span class="tag">School Leadership</span><span class="tag">Operations</span></div>
+            <h3>School Leadership & Operations</h3>
+            <p>Selected work in academic systems, parent communication, teacher development, reporting, staffing, and process improvement in a large private ESL/EFL academy context.</p>
+          </div>
+          <div class="work-card-footer">
+            <span class="status">Case snapshot included below</span>
+            <a class="card-link" href="#school-leadership">Jump to snapshot</a>
+          </div>
+        </article>
+
+        <article class="work-card">
+          <div class="work-card-content">
+            <div class="tag-row"><span class="tag">Research Interests</span><span class="tag">International Education</span></div>
+            <h3>International Education & Research Interests</h3>
+            <p>Current areas of interest include advanced learner development, AI in education, critical thinking, assessment, and long-term talent development across educational systems.</p>
+          </div>
+          <div class="work-card-footer">
+            <span class="status">Case snapshot included below</span>
+            <a class="card-link" href="#research-interests">Jump to snapshot</a>
+          </div>
+        </article>
+
+        <article class="work-card">
+          <div class="work-card-content">
+            <div class="tag-row"><span class="tag">Publication</span><span class="tag">Education Writing</span></div>
+            <h3>Book Publication</h3>
+            <p>A professional proof point that can be expanded into a dedicated publication section once the preferred announcement language and publication details are finalized.</p>
+          </div>
+          <div class="work-card-footer">
+            <span class="status">Ready for link later</span>
+            <a class="card-link" href="#publication">Jump to snapshot</a>
+          </div>
+        </article>
+
+        <article class="work-card">
+          <div class="work-card-content">
+            <div class="tag-row"><span class="tag">Conference</span><span class="tag">Professional Learning</span></div>
+            <h3>Conference Reflection</h3>
+            <p>A flexible space for a conference post, professional learning reflection, or temporary featured item while stronger artifacts are developed.</p>
+          </div>
+          <div class="work-card-footer">
+            <span class="status">Optional featured item</span>
+            <a class="card-link" href="#conference">Jump to snapshot</a>
+          </div>
+        </article>
+      </div>
+
+      <div class="note-box">
+        <strong>No external files required:</strong> the cards above do not point to missing PDFs, images, or extra pages. Later, each “Jump to snapshot” link can be replaced with a real artifact link when a PDF, slide deck, post, or case study is ready.
+      </div>
+    </section>
+
+    <section id="case-snapshots" class="shell" aria-labelledby="case-snapshots-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Case Snapshots</p>
+          <h2 id="case-snapshots-title">What the work shows.</h2>
+        </div>
+        <p>These expandable sections make the portfolio usable immediately. They give visitors enough substance to understand the work without needing attachments.</p>
+      </div>
+
+      <div class="snapshot-grid">
+        <details id="critical-thinking" class="snapshot" open>
+          <summary>
+            <span class="snapshot-title">Critical Thinking Pedagogy</span>
+            <span class="snapshot-subtitle">Graduate-level synthesis of instruction, assessment, and institutional implementation.</span>
+          </summary>
+          <div class="snapshot-body">
+            <div>
+              <h4>Focus</h4>
+              <ul>
+                <li>Designing instruction that makes thinking visible rather than assuming it develops automatically.</li>
+                <li>Connecting classroom-level pedagogy with program-level expectations and assessment practices.</li>
+                <li>Translating critical thinking research into usable routines for instructors and students.</li>
+              </ul>
+            </div>
+            <div>
+              <h4>What it demonstrates</h4>
+              <ul>
+                <li>Ability to synthesize research into practical educational design.</li>
+                <li>Interest in higher education reform and international institutional capacity-building.</li>
+                <li>Clear bridge between theory, implementation, and assessment.</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+
+        <details id="teacher-observation" class="snapshot">
+          <summary>
+            <span class="snapshot-title">Teacher Observation & Feedback Systems</span>
+            <span class="snapshot-subtitle">A practical framework for observing teaching through the lens of learning.</span>
+          </summary>
+          <div class="snapshot-body">
+            <div>
+              <h4>Focus</h4>
+              <ul>
+                <li>Observing specific teacher and student behaviors that promote or disrupt learning.</li>
+                <li>Reducing vague feedback by naming concrete teaching moves and their likely effects.</li>
+                <li>Supporting leaders in giving feedback that is clear, fair, and actionable.</li>
+              </ul>
+            </div>
+            <div>
+              <h4>What it demonstrates</h4>
+              <ul>
+                <li>Instructional leadership grounded in classroom reality.</li>
+                <li>System design for teacher development rather than one-off evaluation.</li>
+                <li>Commitment to humane, evidence-informed professional feedback.</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+
+        <details id="school-leadership" class="snapshot">
+          <summary>
+            <span class="snapshot-title">School Leadership & Operations</span>
+            <span class="snapshot-subtitle">Academic systems, communication, staffing, and process improvement.</span>
+          </summary>
+          <div class="snapshot-body">
+            <div>
+              <h4>Focus</h4>
+              <ul>
+                <li>Building systems for reporting, parent communication, teacher support, and daily academic operations.</li>
+                <li>Improving consistency without flattening teacher judgment or school culture.</li>
+                <li>Making operational decisions that balance students, teachers, parents, and institutional needs.</li>
+              </ul>
+            </div>
+            <div>
+              <h4>What it demonstrates</h4>
+              <ul>
+                <li>Experience leading in a complex, high-expectation education environment.</li>
+                <li>Ability to turn messy school problems into practical systems.</li>
+                <li>Interest in sustainable improvement rather than performative reform.</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+
+        <details id="research-interests" class="snapshot">
+          <summary>
+            <span class="snapshot-title">International Education & Research Interests</span>
+            <span class="snapshot-subtitle">Advanced learning, AI, assessment, critical thinking, and long-term talent development.</span>
+          </summary>
+          <div class="snapshot-body">
+            <div>
+              <h4>Focus</h4>
+              <ul>
+                <li>How educational systems can support learners who have already reached proficiency.</li>
+                <li>How AI can responsibly support teachers, learning design, and assessment.</li>
+                <li>How international education organizations can design for implementation, not just policy aspiration.</li>
+              </ul>
+            </div>
+            <div>
+              <h4>What it demonstrates</h4>
+              <ul>
+                <li>Research interests that connect classroom practice with system-level educational questions.</li>
+                <li>Long-view thinking about learning, motivation, and institutional design.</li>
+                <li>Fit for conversations with researchers, NGOs, international education organizations, and doctoral programs.</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+
+        <details id="publication" class="snapshot">
+          <summary>
+            <span class="snapshot-title">Book Publication</span>
+            <span class="snapshot-subtitle">A professional proof point that can later link to the publication or announcement.</span>
+          </summary>
+          <div class="snapshot-body">
+            <div>
+              <h4>Focus</h4>
+              <ul>
+                <li>Placeholder section for a publication summary, announcement, or short reflective note.</li>
+                <li>Can be updated with title, publisher, date, and a link when ready.</li>
+              </ul>
+            </div>
+            <div>
+              <h4>What it demonstrates</h4>
+              <ul>
+                <li>Public-facing professional work beyond internal school leadership.</li>
+                <li>Ability to contribute to broader educational conversations.</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+
+        <details id="conference" class="snapshot">
+          <summary>
+            <span class="snapshot-title">Conference Reflection</span>
+            <span class="snapshot-subtitle">Optional space for professional learning, conference notes, or a temporary LinkedIn Featured item.</span>
+          </summary>
+          <div class="snapshot-body">
+            <div>
+              <h4>Focus</h4>
+              <ul>
+                <li>Short reflection on a conference session, research theme, or professional learning experience.</li>
+                <li>Can be removed later if the portfolio feels stronger with four or five items.</li>
+              </ul>
+            </div>
+            <div>
+              <h4>What it demonstrates</h4>
+              <ul>
+                <li>Active engagement with current educational research and professional communities.</li>
+                <li>Ability to connect research ideas to practice and leadership.</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="approach" class="shell" aria-labelledby="approach-title">
+      <div class="approach">
+        <div>
+          <p class="eyebrow">Approach</p>
+          <h2 id="approach-title">Clear systems. Humane implementation. Better learning.</h2>
+        </div>
+        <div class="principles">
+          <article class="principle">
+            <h3>Start with the learning problem.</h3>
+            <p>Strong educational design begins by identifying what students need to understand, practice, notice, or become able to do, then building systems around that target.</p>
+          </article>
+          <article class="principle">
+            <h3>Make teacher support practical.</h3>
+            <p>Teachers need feedback and tools they can actually use under real classroom conditions, not abstract ideals that collapse during a busy school day.</p>
+          </article>
+          <article class="principle">
+            <h3>Design for sustainability.</h3>
+            <p>School improvement should make good practice easier to repeat, easier to explain, and easier to sustain across people, classes, and time.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="connect" class="shell" aria-labelledby="connect-title">
+      <div class="connect-box">
+        <p class="eyebrow">Connect</p>
+        <h2 id="connect-title">I’m interested in practical, research-informed education work.</h2>
+        <p>I’m interested in connecting with educators, researchers, school leaders, and international education organizations working on learning design, teacher development, critical thinking, education systems, and responsible uses of AI in education.</p>
+        <div class="contact-actions">
+  <a class="button primary" href="mailto:twinkle.jaysonteacher@gmail.com">Email me</a>
+  <a class="button" href="https://www.linkedin.com/in/jayson-phillips/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+  <a class="button" href="/">Main site</a>
+      </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-row">
+      <span>© <span id="year">2026</span> Jayson Phillips</span>
+      <span>Education Leadership · Learning Design · International Education</span>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
