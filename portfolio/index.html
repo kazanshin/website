@@ -234,7 +234,23 @@
       background: rgba(200, 169, 106, 0.15);
       filter: blur(2px);
     }
+.hero-image-wrap {
+  position: relative;
+  z-index: 1;
+  padding: 18px 18px 0;
+}
 
+.hero-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: rgba(244, 239, 229, 0.06);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.22);
+}
     .panel-inner {
       position: relative;
       display: grid;
@@ -596,9 +612,13 @@
         </div>
       </div>
 
-      <aside class="hero-panel" aria-label="Current professional focus">
-        <div class="panel-inner">
-          <p class="panel-title">Current focus</p>
+    <aside class="hero-panel" aria-label="Current professional focus">
+  <div class="hero-image-wrap">
+    <img class="hero-image" src="image.png" alt="Jayson Phillips" />
+  </div>
+
+  <div class="panel-inner">
+    <p class="panel-title">Current focus</p>
           <ul class="focus-list">
             <li>School leadership and practical improvement systems</li>
             <li>Teacher observation, coaching, and feedback design</li>
